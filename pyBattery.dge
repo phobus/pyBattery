@@ -1,0 +1,146 @@
+#!/usr/bin/python
+
+import pygame
+
+pygame.init()
+pygame.mouse.set_visible(False)
+
+#
+# global values
+#
+
+sw = 320
+sh = 240
+screen = pygame.display.set_mode( [ sw , sh ] )
+
+font_s = pygame.font.SysFont("None", 16 )
+#font_m = pygame.font.SysFont("None", 24 )
+font_l = pygame.font.SysFont("None", 64 )
+
+color_white  = ( 255 , 255 , 255 )
+color_purple = ( 255,0,255 )
+shadow       = ( 0 , 0 , 0 )
+
+menu = [ "LIFE", "BATTERY", "DC", "USB" ]
+
+def sys_read( path ):
+	sys_path = '/sys/' + str( path )
+	f = open( sys_path,'r')
+	ret = f.read()
+	f.close()
+		
+	return ret
+   
+def draw_life():
+	#capacity = "67"
+	capacity = sys_read( "class/power_supply/battery/capacity" ).rstrip()
+
+	text = font_l.render(capacity+" %", True, color_white)
+	textrect = text.get_rect()
+	textrect.centerx = screen.get_rect().centerx
+	textrect.centery = screen.get_rect().centery
+
+	screen.blit( text, textrect )
+	
+def draw_battery():
+	#uevent = "POWER_SUPPLY_NAME=battery\nPOWER_SUPPLY_STATUS=Discharging\nPOWER_SUPPLY_TECHNOLOGY=Li-poly\nPOWER_SUPPLY_HEALTH=Good\nPOWER_SUPPLY_CAPACITY=56\nPOWER_SUPPLY_VOLTAGE_NOW=5223925\nPOWER_SUPPLY_VOLTAGE_MAX_DESIGN=5700000\nPOWER_SUPPLY_VOLTAGE_MIN_DESIGN=4600000\nPOWER_SUPPLY_PRESENT=1\n"
+	uevent = sys_read( "class/power_supply/battery/uevent" )
+	draw_uevent(uevent)
+	
+def draw_dc():
+	#uevent = "POWER_SUPPLY_NAME=dc\nPOWER_SUPPLY_ONLINE=0\n"
+	uevent = sys_read( "class/power_supply/dc/uevent" )
+	draw_uevent(uevent)
+	
+def draw_usb():
+	#uevent = "POWER_SUPPLY_NAME=usb\nPOWER_SUPPLY_ONLINE=0\n"
+	uevent = sys_read( "class/power_supply/usb/uevent" )
+	draw_uevent(uevent)
+
+def draw_uevent(uevent):
+	x = 30
+	for line in uevent.split( ):		
+		screen.blit( font_s.render(line, True , color_white ) , (20,x) )
+		x += 10
+		
+def base_screen(icon):
+	bg_color = [ 0 , 0 , 255 ]
+
+	
+
+	screen.fill( bg_color )
+	screen.blit( font_s.render("pyBATTERY 0.01", True , color_white ) , (10,10) )
+
+	screen.blit( icon, (278, 10) )
+
+#
+# displays bottom menu bar
+#
+
+def disp_menu_bar(pos):
+	for i in range(len(menu)):
+		y = 220
+	
+		color = color_white
+		if i == pos:
+			color = color_purple
+		
+		surf_s = font_s.render( menu[i] , True , shadow )
+
+		x = (i * 64) + 32 - ( surf_s.get_width() / 2 )
+		
+		screen.blit( surf_s , (x+1,y+1) )
+		screen.blit( font_s.render( menu[i], True , color ) , (x,y) )
+		
+#
+# displays menu choose
+#
+
+def disp_menu(pos, icon):
+	base_screen(icon)
+	uevent = ""
+	if  pos == 0:
+		draw_life()
+	if  pos == 1:
+		draw_battery()
+	elif pos == 2:
+		draw_dc()
+	elif pos == 3:
+		draw_usb()
+		
+	disp_menu_bar( pos )
+		
+def main_loop():
+	icon = pygame.image.load("battery_charging.png")	
+	icon = icon.convert_alpha()
+
+	max_pos = len(menu)-1
+	pos = 0
+	done = False
+	while not done:
+		for event in pygame.event.get():
+			
+			if event.type == pygame.QUIT:
+				done = True 
+			elif event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_LEFT:
+					if pos > 0:
+						pos = pos - 1
+					else:
+						pos = max_pos
+					
+				if event.key == pygame.K_RIGHT:
+					if pos < max_pos:
+						pos = pos + 1
+					else:
+						pos = 0
+					
+				if event.key == pygame.K_ESCAPE:
+					done = True
+				
+		disp_menu(pos, icon)
+		pygame.display.update()
+		pygame.time.delay(100) # Save your Battery!
+		
+main_loop()
+pygame.quit() 

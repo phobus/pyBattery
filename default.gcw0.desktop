@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=pyBattery
+Comment=Battery info
+Exec=pyBattery.dge
+Terminal=false
+Type=Application
+StartupNotify=true
+Icon=battery_charging
+Categories=applications;
